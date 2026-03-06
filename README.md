@@ -22,17 +22,67 @@ following [RoMa](https://github.com/Yangl1nFeng/RoMa), the complex training and 
 - transformers
 - tensorboard_logger
 
+Due to resource limitations, we use Qwen-Instruct 7B as the base model. The model is provided in our [Google Drive](https://drive.google.com/drive/folders/1ol7bwABpCJfb_xmqN7WmkF2Ci_l8smCJ?usp=sharing). Please download it and place it under `./lib/LLMs/qwen_7b`.
+
+You are also encouraged to try newer or larger models, which may lead to better performance. Our experiments only represent a basic initial attempt.
+
 ## Data 📕
 We follow RoMa for the use of query data to ensure fair and comprehensive evaluation.  
-(The data files will be released soon.)
 
-## Evaluation 🥧
+Please refer to RoMa to obtain [point cloud data](https://drive.google.com/drive/folders/19lox3eRF0EAVjz6TcQDb7Ns9vjI9qkXN?usp=drive_link), and place it in `./lib/data`. 
 
-### Interaction Adaptation Tuning
-(The code files will be released soon.)
+Please place the data from [Google Drive](https://drive.google.com/drive/folders/1ol7bwABpCJfb_xmqN7WmkF2Ci_l8smCJ?usp=sharing) into the corresponding directory under `./lib/data`.
 
-### Interactive Retrieval
-(The code files and the execution workflow will be released soon.)
+The final directory structure should be:
+```
+data/
+├── split/
+│   ├── ScanRefer_filtered_train.txt
+│   └── ScanRefer_filtered_val.txt
+└── text/
+    └── scanrefer/
+        ├── ori_data.jsonl
+        ├── ScanRefer_filtered_val_with_m...
+        ├── scanrefer_merged_data_8_9.jsonl
+        ├── ScanRefer_val_self_memory_8_9.json
+        ├── train_memory_generate.py
+├── pt2vec_200_random_pos_train.npy
+├── pt2vec_200_random_pos_val.npy
+├── pt2vec_200_random_train.npy
+└── pt2vec_200_random_val.npy
+```
+To make the process clearer, we've broken the project down into several steps, rather than making it too complicated with an end-to-end approach.
+
+## Interaction Adaptation Tuning 
+First, you need to obtain a retrieval model trained on the original data without any interaction. After completing the above steps, run:
+`./sh/train_scanrefer.sh`
+
+Then set the obtained last or optimal checkpoints as the base model for the transfering and run:
+`./sh/train_transfer_scanrefer.sh`
+
+Then your model can be migrated to the interaction domain. Checkpoints please refer our [Google Drive](https://drive.google.com/drive/folders/1ol7bwABpCJfb_xmqN7WmkF2Ci_l8smCJ?usp=sharing), put it into `./runs/scanrefer_train_butd_ESAregion_bigru`.
+
+(You can refer to `./lib/data/text/scanrefer/train_memory_generate.py` for the approach to obtaining interactive domain training data. In fact, we have already provided you with the generated data: `./lib/data/text/scanrefer/scanrefer_merged_data_8_9.jsonl`.)
+
+## Interactive Retrieval
+Rename the best tuned model and using the `./runs/scanrefer_train_butd_ESAregion_bigru/transfer.pth` that have been transfered and obtained in the previous step, then perform next interactive retrieval.
+
+### Coarse-grained description memory
+1. Interaction
+Run `./sh/I_interaction.sh`.
+Obtaining interactive texts, text features, and some intermediate metrics. 
+2. Summary
+Run `./sh/I_summary.sh`.
+Obtaining summary texts.
+3. Retrieval
+Run `./sh/I_retrieval.sh`.
+Using multi-round text to retrieve 3D scenes。
+All intermediate interactive texts, summaries, their encoded features, and intermediate metrics are provided as **checkpoint cases**. Please refer to our [Google Drive](https://drive.google.com/drive/folders/1ol7bwABpCJfb_xmqN7WmkF2Ci_l8smCJ?usp=sharing).
+
+R@1, R@5, R@10 Result: Interactive Text retrieve img: 16.5, 43.0, 59.4.
+
+### Fine-grained description memory
+(Updating in the next following day...)
 
 ## Reference 🤗
 If this paper is helpful for your research, please cite:
