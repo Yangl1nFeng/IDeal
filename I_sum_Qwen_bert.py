@@ -21,7 +21,7 @@ import json
 import torch.nn.functional as F
 import numpy as np
 
-from test_eval_Qwen_bert import predict, process_caption
+from I_inter_Qwen_bert import predict, process_caption
 import arguments
 TOKENIZERS_PARALLELISM=False
 MODEL_ID = "Qwen/Qwen-7B-Instruct"  
