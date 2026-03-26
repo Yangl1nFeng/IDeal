@@ -76,13 +76,22 @@ Run `./sh/I_summary.sh`.
 Obtaining summary texts.
 3. Retrieval
 Run `./sh/I_retrieval.sh`.
-Using multi-round text to retrieve 3D scenes。
+Using multi-round text to retrieve 3D scenes.
 All intermediate interactive texts, summaries, their encoded features, and intermediate metrics are provided as **checkpoint cases**. Please refer to our [Google Drive](https://drive.google.com/drive/folders/1ol7bwABpCJfb_xmqN7WmkF2Ci_l8smCJ?usp=sharing).
 
 R@1, R@5, R@10 Result: Interactive Text retrieve img: 16.5, 43.0, 59.4.
 
 ### Fine-grained description memory
-(Updating in the next following day...)
+1. Interaction
+Run `./sh/I_interaction_ext.sh`.
+Obtaining interactive texts, text features, and some intermediate metrics. 
+2. Summary
+Run `./sh/I_summary_ext.sh`.
+Obtaining summary texts.
+3. Retrieval
+Run `./sh/I_retrieval_ext.sh`.
+
+All intermediate interactive texts, summaries, their encoded features, and intermediate metrics are provided as **checkpoint cases**. Please refer to our [Google Drive](https://drive.google.com/drive/folders/1ol7bwABpCJfb_xmqN7WmkF2Ci_l8smCJ?usp=sharing).
 
 ## Reference 🤗
 If this paper is helpful for your research, please cite:

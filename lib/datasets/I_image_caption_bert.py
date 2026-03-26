@@ -6,9 +6,6 @@ import numpy as np
 # from imageio import imread
 import random
 import json
-
-import h5py
-import nltk
 import csv
 import io
 import pandas as pd
@@ -47,10 +44,7 @@ class PrecompRegionDataset(data.Dataset):
         self.captions = []
         self.memory = []
         self.scene_ids = []
-        # with open(osp.join(loc_cap, '%s_caps.txt' % data_split), 'r') as f:
-        #     for line in f:
-        #         self.captions.append(line.strip())
-        # txt_file = open('juzi.txt','w')
+    
         if opt.data_name == 'cc152k':
             cap_p = osp.join(loc_cap, '%s_caps.tsv' % data_split)
             with io.open(cap_p) as f:
@@ -58,48 +52,81 @@ class PrecompRegionDataset(data.Dataset):
                 for line in tsvreader:
                     self.captions.append(line[1].strip())
                     
-        # elif 'scanrefer' == opt.data_name:
-        #     self.pos = None
-        #     self.sample_list = []
-        #     if data_split == 'train':
-        #         self.images = np.load('./lib/data/pt2vec_200_random_pos_train.npy')   # bs * imagedim
-        #         pos_temp = np.load('./lib/data/pt2vec_200_random_pos_train.npy')
-        #     else:
-        #         self.images = np.load('./lib/data/pt2vec_200_random_val.npy')
-        #         pos_temp = np.load('./lib/data/pt2vec_200_random_pos_val.npy')
-        #     if data_split == 'train':
-        #         self.txt = open("./lib/data/split/ScanRefer_filtered_train.txt", "r", encoding="utf-8")
-        #         json_file = open("./lib/data/text/scanrefer/train_data.jsonl", "r", encoding="utf-8")
-        #     else:
-        #         self.txt = open("./lib/data/split/ScanRefer_filtered_val.txt", "r", encoding="utf-8")
-        #         json_file = open("/home/fengyanglin/ESA-main/ESA_BIGRU/lib/data/ScanRefer_val_self_memory_tokenized.json", "r", encoding="utf-8")
+        elif 'scanrefer' == opt.data_name:
+            self.pos = None
+            self.sample_list = []
+            if data_split == 'train':
+                self.images = np.load('./lib/data/pt2vec_200_random_pos_train.npy')   # bs * imagedim
+                pos_temp = np.load('./lib/data/pt2vec_200_random_pos_train.npy')
+            else:
+                self.images = np.load('./lib/data/pt2vec_200_random_val.npy')
+                pos_temp = np.load('./lib/data/pt2vec_200_random_pos_val.npy')
+            if data_split == 'train':
+                self.txt = open("./lib/data/split/ScanRefer_filtered_train.txt", "r", encoding="utf-8")
+                json_file = open("./lib/data/text/scanrefer/ori_data.jsonl", "r", encoding="utf-8")
+            else:
+                self.txt = open("./lib/data/split/ScanRefer_filtered_val.txt", "r", encoding="utf-8")
+                json_file = open("./lib/data/split/ScanRefer_filtered_val_with_memory.json", "r", encoding="utf-8")
 
-        #     for line in self.txt.readlines():
-        #         name = line.replace('\n', '')
-        #         self.sample_list.append(name)
+            for line in self.txt.readlines():
+                name = line.replace('\n', '')
+                self.sample_list.append(name)
             
-        #     x_coords = pos_temp[:, :, 0]
-        #     y_coords = pos_temp[:, :, 1]
+            x_coords = pos_temp[:, :, 0]
+            y_coords = pos_temp[:, :, 1]
 
-        #     x_min = x_coords.min(axis=1, keepdims=True)
-        #     x_max = x_coords.max(axis=1, keepdims=True)
-        #     x_normalized = (x_coords - x_min) / (x_max - x_min)
+            x_min = x_coords.min(axis=1, keepdims=True)
+            x_max = x_coords.max(axis=1, keepdims=True)
+            x_normalized = (x_coords - x_min) / (x_max - x_min)
 
-        #     y_min = y_coords.min(axis=1, keepdims=True)
-        #     y_max = y_coords.max(axis=1, keepdims=True)
-        #     y_normalized = (y_coords - y_min) / (y_max - y_min)
+            y_min = y_coords.min(axis=1, keepdims=True)
+            y_max = y_coords.max(axis=1, keepdims=True)
+            y_normalized = (y_coords - y_min) / (y_max - y_min)
 
-        #     self.pos = pos_temp.copy()
-        #     self.pos[:, :, 0] = x_normalized
-        #     self.pos[:, :, 1] = y_normalized
+            self.pos = pos_temp.copy()
+            self.pos[:, :, 0] = x_normalized
+            self.pos[:, :, 1] = y_normalized
 
-        #     json_content = json.load(json_file)
-        #     for scene_name in self.sample_list:
-        #         for item in json_content:
-        #             if item.get('scene_id') == scene_name:
-        #                 self.captions.append(item.get('description'))
-        #                 self.memory.append(item.get('memory'))
-        #                 self.scene_ids.append(item.get('scene_id'))
+            json_content = json.load(json_file)
+            self.pt_div = 10
+
+            content_len = []
+            for i in range(len(json_content)):
+                content_len.append(len(json_content[i]['token']))
+            
+            content_len = np.array(content_len)
+            index = (-content_len).argsort()
+
+            new_json_content = []
+
+            for i in range(len(json_content)):
+                new_json_content.append(json_content[index[i]])
+            
+            for i in range(len(self.sample_list)):
+                count = 0
+                k = 0
+                txt = ''
+                memo = ''
+                for j in range(len(new_json_content)):
+                    if count < self.pt_div: 
+                        if new_json_content[j]['scene_id'] == self.sample_list[i]:
+                            if k < 1:
+                                txt = txt + new_json_content[j]['description']
+                                memo = memo + new_json_content[j]['memory']
+                                k = k + 1
+                            elif k >= 1:
+                                self.captions.append(txt.strip())
+                                self.memory.append(memo.strip())
+                                self.scene_ids.append(new_json_content[j]['scene_id'])
+                                count = count + 1
+                                k = 0
+                                txt = ''
+                                memo = ''
+                    if j >= len(new_json_content)-1 and count < self.pt_div:
+                        for i in range(self.pt_div-count):
+                            self.captions.append(self.captions[-1])
+                            self.memory.append(self.memory[-1])
+                            self.scene_ids.append(self.scene_ids[-1])
 
         elif 'scanrefer_ori' == opt.data_name:
             self.pos = None

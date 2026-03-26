@@ -1,26 +1,15 @@
 """Training script"""
-import os
-import time
 import numpy as np
 import torch
-
-from lib.vocab import deserialize_vocab
-from lib.datasets import image_caption
 from lib.vse_bert import VSEModel
-from lib.evaluation import i2t, t2i, encode_data, compute_sim
 from transformers import BertTokenizer
 from threading import Thread
-from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
-
-from tqdm import tqdm
-from lib.pos_encoder import EncoderText
+from transformers import AutoModelForCausalLM, AutoTokenizer
 import logging
-from scipy.special import comb
 import json
-import torch.nn.functional as F
 import numpy as np
 
-from I_inter_Qwen_bert import predict, process_caption
+from I_inter_Qwen_bert import predict
 import arguments
 TOKENIZERS_PARALLELISM=False
 MODEL_ID = "Qwen/Qwen-7B-Instruct"  
@@ -89,17 +78,17 @@ def summery_answers():
             Sentences:
             {text}
 
-            Template for beginning of sentence: 
-            1. this is ... 
-            2. it is ... 
-            3. there are ... 
-            4. there is ... 
-            5. xxx is ... 
+            Template for beginning of sentence:
+            1. this is ...
+            2. it is ...
+            3. there are ...
+            4. there is ...
+            5. xxx is ...
             6. xxx are ...
 
             Important rules:
             0. Try to delete as much information as you think is redundant or uninformative, such as describing the same object multiple times.
-            1. Answer 2-5 sentences at most. The returned answer is a paragraph, without blank lines and without Chinese.
+            1. Answer 12 sentences at most. The returned answer is a paragraph, without blank lines and without Chinese.
             2. Only use details that are available in original sentences. Be as detailed as possible
             3. If no new details about the object are present in the passage, do not fabricate new ones.
             4. The sentence format should imitate the original sentence, for example, every letter in the words should not be capitalized, there should be a space before the period and comma, and they should all be simple sentences without clauses.
